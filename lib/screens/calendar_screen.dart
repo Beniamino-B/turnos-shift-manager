@@ -11,7 +11,7 @@ import '../widgets/glass.dart';
 import '../widgets/paint_bar.dart';
 
 const double _horizontalPadding = 14;
-const double _bottomPadding = kBottomNavHeight + 80;
+const double _bottomPadding = 180;
 const double _paintBarBottom = 100;
 
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -74,15 +74,28 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 child: _topBar(palette),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                formatMonthYear(DateTime(year, month, 1)),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  color: palette.textPrimary,
+            SizedBox(
+              width: double.infinity,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.96, end: 1).animate(
+                      CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                    ),
+                    child: child,
+                  ),
+                ),
+                child: Text(
+                  formatMonthYear(DateTime(year, month, 1)),
+                  key: ValueKey('$year-$month'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: palette.textPrimary,
+                  ),
                 ),
               ),
             ),
@@ -188,17 +201,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     AppPalette palette,
   ) {
     final cells = _monthCells(year, month);
-    return Column(
-      children: [
-        _weekdayRow(palette),
-        Expanded(
-          child: Padding(
+    return SingleChildScrollView(
+      physics: const NeverScrollableScrollPhysics(),
+      child: Column(
+        children: [
+          _weekdayRow(palette),
+          Padding(
             padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final rows = cells.length ~/ 7;
                 final cellWidth = constraints.maxWidth / 7;
-                final cellHeight = constraints.maxHeight / rows;
+                final cellHeight = cellWidth / 0.85;
                 return Listener(
                   behavior: HitTestBehavior.opaque,
                   onPointerDown: paintMode
@@ -220,11 +233,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   onPointerUp:
                       paintMode ? (_) => _lastPaintedDay = null : null,
                   child: GridView.builder(
+                    shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     padding: EdgeInsets.zero,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 7,
-                      childAspectRatio: cellWidth / cellHeight,
+                      childAspectRatio: 0.85,
                       crossAxisSpacing: 0,
                       mainAxisSpacing: 0,
                     ),
@@ -244,8 +259,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               },
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

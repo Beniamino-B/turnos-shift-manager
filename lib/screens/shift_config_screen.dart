@@ -193,7 +193,7 @@ class _ShiftEditorSheetState extends ConsumerState<_ShiftEditorSheet> {
     final palette = AppPalette.of(context);
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
       ),
       child: GlassContainer(
         borderRadius: 30,
