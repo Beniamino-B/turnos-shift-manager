@@ -10,6 +10,7 @@ class SummaryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final palette = AppPalette.of(context);
     final summary = ref.watch(payrollSummaryProvider);
     if (summary == null) {
       return const SizedBox.shrink();
@@ -24,25 +25,28 @@ class SummaryCard extends ConsumerWidget {
             label: 'Trabajados',
             value: '${summary.daysWorked}',
             color: AppColors.primary,
+            palette: palette,
           ),
-          _divider(),
+          _divider(palette),
           _SummaryStat(
             label: 'Descanso',
             value: '${summary.restDays}',
             color: AppColors.accent,
+            palette: palette,
           ),
-          _divider(),
+          _divider(palette),
           _SummaryStat(
             label: 'Faltan para pago',
             value: '${summary.daysUntilPayment} días',
             color: AppColors.success,
+            palette: palette,
           ),
         ],
       ),
     );
   }
 
-  Widget _divider() {
+  Widget _divider(AppPalette palette) {
     return Container(
       width: 1,
       height: 30,
@@ -56,11 +60,13 @@ class _SummaryStat extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
+  final AppPalette palette;
 
   const _SummaryStat({
     required this.label,
     required this.value,
     required this.color,
+    required this.palette,
   });
 
   @override
@@ -80,8 +86,8 @@ class _SummaryStat extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: palette.textSecondary,
               fontSize: 11,
               fontWeight: FontWeight.w500,
             ),

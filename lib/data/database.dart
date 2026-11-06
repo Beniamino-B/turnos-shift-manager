@@ -15,6 +15,11 @@ class Shifts extends Table {
   TextColumn get endTime => text()();
   TextColumn get colorHex => text()();
   BoolColumn get isNightShift => boolean().withDefault(const Constant(false))();
+  BoolColumn get isRestDay => boolean().withDefault(const Constant(false))();
+  BoolColumn get appliesSundaySurcharge =>
+      boolean().withDefault(const Constant(true))();
+  BoolColumn get appliesHolidaySurcharge =>
+      boolean().withDefault(const Constant(true))();
 }
 
 class DayEntries extends Table {
@@ -36,6 +41,8 @@ class PayrollConfigs extends Table {
   TextColumn get frequency => text().withDefault(const Constant('MONTHLY'))();
   IntColumn get cutoffDay1 => integer().withDefault(const Constant(1))();
   IntColumn get cutoffDay2 => integer().withDefault(const Constant(16))();
+  IntColumn get paymentDay1 => integer().withDefault(const Constant(30))();
+  IntColumn get paymentDay2 => integer().withDefault(const Constant(15))();
   IntColumn get healthPercentage => integer().withDefault(const Constant(4))();
   IntColumn get pensionPercentage => integer().withDefault(const Constant(4))();
   IntColumn get nightSurchargePercentage =>
@@ -53,12 +60,36 @@ class PaymentHistory extends Table {
   TextColumn get note => text().withDefault(const Constant(''))();
 }
 
-@DriftDatabase(tables: [Shifts, DayEntries, PayrollConfigs, PaymentHistory])
+class AppSettings extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get themeMode => text().withDefault(const Constant('system'))();
+  BoolColumn get onboardingDone => boolean().withDefault(const Constant(false))();
+}
+
+@DriftDatabase(
+    tables: [Shifts, DayEntries, PayrollConfigs, PaymentHistory, AppSettings])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) async {
+          await m.createAll();
+        },
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.addColumn(shifts, shifts.isRestDay);
+            await m.addColumn(shifts, shifts.appliesSundaySurcharge);
+            await m.addColumn(shifts, shifts.appliesHolidaySurcharge);
+            await m.addColumn(payrollConfigs, payrollConfigs.paymentDay1);
+            await m.addColumn(payrollConfigs, payrollConfigs.paymentDay2);
+            await m.createTable(appSettings);
+          }
+        },
+      );
 }
 
 LazyDatabase _openConnection() {
@@ -95,6 +126,16 @@ Future<void> seedDefaults(AppDatabase db) async {
           endTime: '06:00',
           colorHex: '#7C3AED',
           isNightShift: const Value(true),
+        ),
+        ShiftsCompanion.insert(
+          name: 'Descanso',
+          abbreviation: 'L',
+          startTime: '00:00',
+          endTime: '00:00',
+          colorHex: '#9CA3AF',
+          isRestDay: const Value(true),
+          appliesSundaySurcharge: const Value(false),
+          appliesHolidaySurcharge: const Value(false),
         ),
       ]);
     });

@@ -25,7 +25,7 @@ class FinanceScreen extends ConsumerWidget {
             bottom: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: _titleBar(),
+              child: _titleBar(context),
             ),
           ),
           Padding(
@@ -41,7 +41,7 @@ class FinanceScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(15),
                 ),
                 labelColor: Colors.white,
-                unselectedLabelColor: AppColors.textSecondary,
+                unselectedLabelColor: AppPalette.of(context).textSecondary,
                 labelStyle: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
@@ -67,20 +67,22 @@ class FinanceScreen extends ConsumerWidget {
     );
   }
 
-  Widget _titleBar() {
-    return const GlassContainer(
-      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+  Widget _titleBar(BuildContext context) {
+    final palette = AppPalette.of(context);
+    return GlassContainer(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       borderRadius: 26,
       child: Row(
         children: [
-          Icon(Icons.pie_chart_rounded, color: AppColors.primary, size: 26),
-          SizedBox(width: 10),
+          const Icon(Icons.pie_chart_rounded,
+              color: AppColors.primary, size: 26),
+          const SizedBox(width: 10),
           Text(
             'Finanzas',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: palette.textPrimary,
             ),
           ),
         ],
@@ -94,6 +96,7 @@ class _ResumenTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final palette = AppPalette.of(context);
     final summary = ref.watch(payrollSummaryProvider);
     final config = ref.watch(configProvider).valueOrNull;
     final shifts = ref.watch(shiftsProvider).valueOrNull ?? const <Shift>[];
@@ -107,11 +110,11 @@ class _ResumenTab extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 130),
       children: [
-        _topSummaryCard(summary),
+        _topSummaryCard(summary, palette),
         const SizedBox(height: 14),
-        _earningsChartCard(config, shifts, entries),
+        _earningsChartCard(config, shifts, entries, palette),
         const SizedBox(height: 14),
-        _breakdownCard(summary, config),
+        _breakdownCard(summary, config, palette),
         const SizedBox(height: 14),
         GlassActionButton(
           label: 'Registrar pago',
@@ -122,36 +125,36 @@ class _ResumenTab extends ConsumerWidget {
     );
   }
 
-  Widget _topSummaryCard(PayrollSummary summary) {
+  Widget _topSummaryCard(PayrollSummary summary, AppPalette palette) {
     return GlassContainer(
       borderRadius: 26,
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Tu nómina actual',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.textSecondary,
+              color: palette.textSecondary,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             formatMoney(summary.net),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 34,
               fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
+              color: palette.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Neto a recibir',
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.textSecondary,
+              color: palette.textSecondary,
             ),
           ),
           const SizedBox(height: 16),
@@ -161,12 +164,14 @@ class _ResumenTab extends ConsumerWidget {
                 'Bruto',
                 formatMoney(summary.gross),
                 AppColors.primary,
+                palette,
               ),
               const SizedBox(width: 20),
               _miniStat(
                 'Deducciones',
                 formatMoney(summary.totalDeductions),
                 AppColors.danger,
+                palette,
               ),
             ],
           ),
@@ -175,7 +180,8 @@ class _ResumenTab extends ConsumerWidget {
     );
   }
 
-  Widget _miniStat(String label, String value, Color color) {
+  Widget _miniStat(
+      String label, String value, Color color, AppPalette palette) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,9 +196,9 @@ class _ResumenTab extends ConsumerWidget {
           ),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: AppColors.textSecondary,
+              color: palette.textSecondary,
             ),
           ),
         ],
@@ -204,6 +210,7 @@ class _ResumenTab extends ConsumerWidget {
     PayrollConfig config,
     List<Shift> shifts,
     List<DayEntry> entries,
+    AppPalette palette,
   ) {
     final data = _lastThreeMonths(config, shifts, entries);
     final maxValue = data.map((e) => e.$2).fold(0, max);
@@ -215,20 +222,20 @@ class _ResumenTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Tendencia de ingresos',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: palette.textPrimary,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Últimos 3 meses',
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.textSecondary,
+              color: palette.textSecondary,
             ),
           ),
           const SizedBox(height: 18),
@@ -255,9 +262,9 @@ class _ResumenTab extends ConsumerWidget {
                         if (value == 0) return const SizedBox.shrink();
                         return Text(
                           formatMoneyCompact(value.toInt()),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 9,
-                            color: AppColors.textSecondary,
+                            color: palette.textSecondary,
                           ),
                         );
                       },
@@ -275,10 +282,10 @@ class _ResumenTab extends ConsumerWidget {
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
                             data[index].$1,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
+                              color: palette.textSecondary,
                             ),
                           ),
                         );
@@ -308,7 +315,8 @@ class _ResumenTab extends ConsumerWidget {
     );
   }
 
-  Widget _breakdownCard(PayrollSummary summary, PayrollConfig config) {
+  Widget _breakdownCard(
+      PayrollSummary summary, PayrollConfig config, AppPalette palette) {
     final rows = <(String, int, Color)>[
       ('Horas base (${formatMinutes(summary.totalMinutes)})',
           summary.basePay, AppColors.primary),
@@ -329,12 +337,12 @@ class _ResumenTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Desglose de nómina',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
+              color: palette.textPrimary,
             ),
           ),
           const SizedBox(height: 12),
@@ -346,9 +354,9 @@ class _ResumenTab extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       row.$1,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textPrimary,
+                        color: palette.textPrimary,
                       ),
                     ),
                   ),
@@ -374,35 +382,36 @@ class _HistorialTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final palette = AppPalette.of(context);
     final payments = ref.watch(paymentHistoryProvider).valueOrNull ??
         const <PaymentHistoryData>[];
 
     if (payments.isEmpty) {
       return ListView(
         padding: const EdgeInsets.fromLTRB(16, 40, 16, 130),
-        children: const [
+        children: [
           GlassContainer(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Column(
               children: [
                 Icon(Icons.history_rounded,
-                    color: AppColors.textSecondary, size: 40),
-                SizedBox(height: 12),
+                    color: palette.textSecondary, size: 40),
+                const SizedBox(height: 12),
                 Text(
                   'Aún no hay pagos registrados',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: palette.textPrimary,
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
                   'Registra tu primer pago en la pestaña Resumen.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: palette.textSecondary,
                   ),
                 ),
               ],
@@ -429,10 +438,10 @@ class _HistorialTab extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       '${formatDateShort(payment.periodStart)} - ${formatDateShort(payment.periodEnd)}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                        color: palette.textPrimary,
                       ),
                     ),
                   ),
@@ -450,19 +459,19 @@ class _HistorialTab extends ConsumerWidget {
               Row(
                 children: [
                   _historyStat(
-                      'Esperado', formatMoney(payment.expectedAmount)),
+                      'Esperado', formatMoney(payment.expectedAmount), palette),
                   const SizedBox(width: 16),
                   _historyStat('Deducciones',
-                      formatMoney(payment.extraDeductions)),
+                      formatMoney(payment.extraDeductions), palette),
                 ],
               ),
               if (payment.note.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
                   payment.note,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: palette.textSecondary,
                   ),
                 ),
               ],
@@ -473,23 +482,23 @@ class _HistorialTab extends ConsumerWidget {
     );
   }
 
-  Widget _historyStat(String label, String value) {
+  Widget _historyStat(String label, String value, AppPalette palette) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
+            color: palette.textPrimary,
           ),
         ),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10,
-            color: AppColors.textSecondary,
+            color: palette.textSecondary,
           ),
         ),
       ],
@@ -530,6 +539,7 @@ class _RegisterPaymentSheetState
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     final summary = ref.watch(payrollSummaryProvider);
 
     return Padding(
@@ -549,18 +559,18 @@ class _RegisterPaymentSheetState
                 width: 44,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: AppColors.textSecondary.withValues(alpha: 0.4),
+                  color: palette.textSecondary.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Registrar pago',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
+                color: palette.textPrimary,
               ),
             ),
             const SizedBox(height: 4),
@@ -568,9 +578,9 @@ class _RegisterPaymentSheetState
               summary == null
                   ? 'Esperando datos...'
                   : 'Periodo: ${formatDateShort(summary.periodStart)} - ${formatDateShort(summary.periodEnd)}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textSecondary,
+                color: palette.textSecondary,
               ),
             ),
             const SizedBox(height: 18),

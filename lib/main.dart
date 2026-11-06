@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'data/database.dart';
 import 'providers/providers.dart';
 import 'screens/home_shell.dart';
+import 'screens/onboarding_screen.dart';
 import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 
@@ -20,16 +21,21 @@ Future<void> main() async {
   );
 }
 
-class TurnosApp extends StatelessWidget {
+class TurnosApp extends ConsumerWidget {
   const TurnosApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+    final onboardingDone = ref.watch(onboardingDoneProvider);
+
     return MaterialApp(
       title: 'Turnos',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const HomeShell(),
+      darkTheme: buildDarkTheme(),
+      themeMode: themeMode,
+      home: onboardingDone ? const HomeShell() : const OnboardingScreen(),
     );
   }
 }

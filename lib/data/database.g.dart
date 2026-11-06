@@ -56,9 +56,49 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'CHECK ("is_night_shift" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _isRestDayMeta =
+      const VerificationMeta('isRestDay');
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, name, abbreviation, startTime, endTime, colorHex, isNightShift];
+  late final GeneratedColumn<bool> isRestDay = GeneratedColumn<bool>(
+      'is_rest_day', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_rest_day" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _appliesSundaySurchargeMeta =
+      const VerificationMeta('appliesSundaySurcharge');
+  @override
+  late final GeneratedColumn<bool> appliesSundaySurcharge =
+      GeneratedColumn<bool>('applies_sunday_surcharge', aliasedName, false,
+          type: DriftSqlType.bool,
+          requiredDuringInsert: false,
+          defaultConstraints: GeneratedColumn.constraintIsAlways(
+              'CHECK ("applies_sunday_surcharge" IN (0, 1))'),
+          defaultValue: const Constant(true));
+  static const VerificationMeta _appliesHolidaySurchargeMeta =
+      const VerificationMeta('appliesHolidaySurcharge');
+  @override
+  late final GeneratedColumn<bool> appliesHolidaySurcharge =
+      GeneratedColumn<bool>('applies_holiday_surcharge', aliasedName, false,
+          type: DriftSqlType.bool,
+          requiredDuringInsert: false,
+          defaultConstraints: GeneratedColumn.constraintIsAlways(
+              'CHECK ("applies_holiday_surcharge" IN (0, 1))'),
+          defaultValue: const Constant(true));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        abbreviation,
+        startTime,
+        endTime,
+        colorHex,
+        isNightShift,
+        isRestDay,
+        appliesSundaySurcharge,
+        appliesHolidaySurcharge
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -110,6 +150,25 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
           isNightShift.isAcceptableOrUnknown(
               data['is_night_shift']!, _isNightShiftMeta));
     }
+    if (data.containsKey('is_rest_day')) {
+      context.handle(
+          _isRestDayMeta,
+          isRestDay.isAcceptableOrUnknown(
+              data['is_rest_day']!, _isRestDayMeta));
+    }
+    if (data.containsKey('applies_sunday_surcharge')) {
+      context.handle(
+          _appliesSundaySurchargeMeta,
+          appliesSundaySurcharge.isAcceptableOrUnknown(
+              data['applies_sunday_surcharge']!, _appliesSundaySurchargeMeta));
+    }
+    if (data.containsKey('applies_holiday_surcharge')) {
+      context.handle(
+          _appliesHolidaySurchargeMeta,
+          appliesHolidaySurcharge.isAcceptableOrUnknown(
+              data['applies_holiday_surcharge']!,
+              _appliesHolidaySurchargeMeta));
+    }
     return context;
   }
 
@@ -133,6 +192,14 @@ class $ShiftsTable extends Shifts with TableInfo<$ShiftsTable, Shift> {
           .read(DriftSqlType.string, data['${effectivePrefix}color_hex'])!,
       isNightShift: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_night_shift'])!,
+      isRestDay: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_rest_day'])!,
+      appliesSundaySurcharge: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool,
+          data['${effectivePrefix}applies_sunday_surcharge'])!,
+      appliesHolidaySurcharge: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool,
+          data['${effectivePrefix}applies_holiday_surcharge'])!,
     );
   }
 
@@ -150,6 +217,9 @@ class Shift extends DataClass implements Insertable<Shift> {
   final String endTime;
   final String colorHex;
   final bool isNightShift;
+  final bool isRestDay;
+  final bool appliesSundaySurcharge;
+  final bool appliesHolidaySurcharge;
   const Shift(
       {required this.id,
       required this.name,
@@ -157,7 +227,10 @@ class Shift extends DataClass implements Insertable<Shift> {
       required this.startTime,
       required this.endTime,
       required this.colorHex,
-      required this.isNightShift});
+      required this.isNightShift,
+      required this.isRestDay,
+      required this.appliesSundaySurcharge,
+      required this.appliesHolidaySurcharge});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -168,6 +241,9 @@ class Shift extends DataClass implements Insertable<Shift> {
     map['end_time'] = Variable<String>(endTime);
     map['color_hex'] = Variable<String>(colorHex);
     map['is_night_shift'] = Variable<bool>(isNightShift);
+    map['is_rest_day'] = Variable<bool>(isRestDay);
+    map['applies_sunday_surcharge'] = Variable<bool>(appliesSundaySurcharge);
+    map['applies_holiday_surcharge'] = Variable<bool>(appliesHolidaySurcharge);
     return map;
   }
 
@@ -180,6 +256,9 @@ class Shift extends DataClass implements Insertable<Shift> {
       endTime: Value(endTime),
       colorHex: Value(colorHex),
       isNightShift: Value(isNightShift),
+      isRestDay: Value(isRestDay),
+      appliesSundaySurcharge: Value(appliesSundaySurcharge),
+      appliesHolidaySurcharge: Value(appliesHolidaySurcharge),
     );
   }
 
@@ -194,6 +273,11 @@ class Shift extends DataClass implements Insertable<Shift> {
       endTime: serializer.fromJson<String>(json['endTime']),
       colorHex: serializer.fromJson<String>(json['colorHex']),
       isNightShift: serializer.fromJson<bool>(json['isNightShift']),
+      isRestDay: serializer.fromJson<bool>(json['isRestDay']),
+      appliesSundaySurcharge:
+          serializer.fromJson<bool>(json['appliesSundaySurcharge']),
+      appliesHolidaySurcharge:
+          serializer.fromJson<bool>(json['appliesHolidaySurcharge']),
     );
   }
   @override
@@ -207,6 +291,10 @@ class Shift extends DataClass implements Insertable<Shift> {
       'endTime': serializer.toJson<String>(endTime),
       'colorHex': serializer.toJson<String>(colorHex),
       'isNightShift': serializer.toJson<bool>(isNightShift),
+      'isRestDay': serializer.toJson<bool>(isRestDay),
+      'appliesSundaySurcharge': serializer.toJson<bool>(appliesSundaySurcharge),
+      'appliesHolidaySurcharge':
+          serializer.toJson<bool>(appliesHolidaySurcharge),
     };
   }
 
@@ -217,7 +305,10 @@ class Shift extends DataClass implements Insertable<Shift> {
           String? startTime,
           String? endTime,
           String? colorHex,
-          bool? isNightShift}) =>
+          bool? isNightShift,
+          bool? isRestDay,
+          bool? appliesSundaySurcharge,
+          bool? appliesHolidaySurcharge}) =>
       Shift(
         id: id ?? this.id,
         name: name ?? this.name,
@@ -226,6 +317,11 @@ class Shift extends DataClass implements Insertable<Shift> {
         endTime: endTime ?? this.endTime,
         colorHex: colorHex ?? this.colorHex,
         isNightShift: isNightShift ?? this.isNightShift,
+        isRestDay: isRestDay ?? this.isRestDay,
+        appliesSundaySurcharge:
+            appliesSundaySurcharge ?? this.appliesSundaySurcharge,
+        appliesHolidaySurcharge:
+            appliesHolidaySurcharge ?? this.appliesHolidaySurcharge,
       );
   Shift copyWithCompanion(ShiftsCompanion data) {
     return Shift(
@@ -240,6 +336,13 @@ class Shift extends DataClass implements Insertable<Shift> {
       isNightShift: data.isNightShift.present
           ? data.isNightShift.value
           : this.isNightShift,
+      isRestDay: data.isRestDay.present ? data.isRestDay.value : this.isRestDay,
+      appliesSundaySurcharge: data.appliesSundaySurcharge.present
+          ? data.appliesSundaySurcharge.value
+          : this.appliesSundaySurcharge,
+      appliesHolidaySurcharge: data.appliesHolidaySurcharge.present
+          ? data.appliesHolidaySurcharge.value
+          : this.appliesHolidaySurcharge,
     );
   }
 
@@ -252,14 +355,26 @@ class Shift extends DataClass implements Insertable<Shift> {
           ..write('startTime: $startTime, ')
           ..write('endTime: $endTime, ')
           ..write('colorHex: $colorHex, ')
-          ..write('isNightShift: $isNightShift')
+          ..write('isNightShift: $isNightShift, ')
+          ..write('isRestDay: $isRestDay, ')
+          ..write('appliesSundaySurcharge: $appliesSundaySurcharge, ')
+          ..write('appliesHolidaySurcharge: $appliesHolidaySurcharge')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(
-      id, name, abbreviation, startTime, endTime, colorHex, isNightShift);
+      id,
+      name,
+      abbreviation,
+      startTime,
+      endTime,
+      colorHex,
+      isNightShift,
+      isRestDay,
+      appliesSundaySurcharge,
+      appliesHolidaySurcharge);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -270,7 +385,10 @@ class Shift extends DataClass implements Insertable<Shift> {
           other.startTime == this.startTime &&
           other.endTime == this.endTime &&
           other.colorHex == this.colorHex &&
-          other.isNightShift == this.isNightShift);
+          other.isNightShift == this.isNightShift &&
+          other.isRestDay == this.isRestDay &&
+          other.appliesSundaySurcharge == this.appliesSundaySurcharge &&
+          other.appliesHolidaySurcharge == this.appliesHolidaySurcharge);
 }
 
 class ShiftsCompanion extends UpdateCompanion<Shift> {
@@ -281,6 +399,9 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
   final Value<String> endTime;
   final Value<String> colorHex;
   final Value<bool> isNightShift;
+  final Value<bool> isRestDay;
+  final Value<bool> appliesSundaySurcharge;
+  final Value<bool> appliesHolidaySurcharge;
   const ShiftsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -289,6 +410,9 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     this.endTime = const Value.absent(),
     this.colorHex = const Value.absent(),
     this.isNightShift = const Value.absent(),
+    this.isRestDay = const Value.absent(),
+    this.appliesSundaySurcharge = const Value.absent(),
+    this.appliesHolidaySurcharge = const Value.absent(),
   });
   ShiftsCompanion.insert({
     this.id = const Value.absent(),
@@ -298,6 +422,9 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     required String endTime,
     required String colorHex,
     this.isNightShift = const Value.absent(),
+    this.isRestDay = const Value.absent(),
+    this.appliesSundaySurcharge = const Value.absent(),
+    this.appliesHolidaySurcharge = const Value.absent(),
   })  : name = Value(name),
         abbreviation = Value(abbreviation),
         startTime = Value(startTime),
@@ -311,6 +438,9 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     Expression<String>? endTime,
     Expression<String>? colorHex,
     Expression<bool>? isNightShift,
+    Expression<bool>? isRestDay,
+    Expression<bool>? appliesSundaySurcharge,
+    Expression<bool>? appliesHolidaySurcharge,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -320,6 +450,11 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
       if (endTime != null) 'end_time': endTime,
       if (colorHex != null) 'color_hex': colorHex,
       if (isNightShift != null) 'is_night_shift': isNightShift,
+      if (isRestDay != null) 'is_rest_day': isRestDay,
+      if (appliesSundaySurcharge != null)
+        'applies_sunday_surcharge': appliesSundaySurcharge,
+      if (appliesHolidaySurcharge != null)
+        'applies_holiday_surcharge': appliesHolidaySurcharge,
     });
   }
 
@@ -330,7 +465,10 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
       Value<String>? startTime,
       Value<String>? endTime,
       Value<String>? colorHex,
-      Value<bool>? isNightShift}) {
+      Value<bool>? isNightShift,
+      Value<bool>? isRestDay,
+      Value<bool>? appliesSundaySurcharge,
+      Value<bool>? appliesHolidaySurcharge}) {
     return ShiftsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -339,6 +477,11 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
       endTime: endTime ?? this.endTime,
       colorHex: colorHex ?? this.colorHex,
       isNightShift: isNightShift ?? this.isNightShift,
+      isRestDay: isRestDay ?? this.isRestDay,
+      appliesSundaySurcharge:
+          appliesSundaySurcharge ?? this.appliesSundaySurcharge,
+      appliesHolidaySurcharge:
+          appliesHolidaySurcharge ?? this.appliesHolidaySurcharge,
     );
   }
 
@@ -366,6 +509,17 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
     if (isNightShift.present) {
       map['is_night_shift'] = Variable<bool>(isNightShift.value);
     }
+    if (isRestDay.present) {
+      map['is_rest_day'] = Variable<bool>(isRestDay.value);
+    }
+    if (appliesSundaySurcharge.present) {
+      map['applies_sunday_surcharge'] =
+          Variable<bool>(appliesSundaySurcharge.value);
+    }
+    if (appliesHolidaySurcharge.present) {
+      map['applies_holiday_surcharge'] =
+          Variable<bool>(appliesHolidaySurcharge.value);
+    }
     return map;
   }
 
@@ -378,7 +532,10 @@ class ShiftsCompanion extends UpdateCompanion<Shift> {
           ..write('startTime: $startTime, ')
           ..write('endTime: $endTime, ')
           ..write('colorHex: $colorHex, ')
-          ..write('isNightShift: $isNightShift')
+          ..write('isNightShift: $isNightShift, ')
+          ..write('isRestDay: $isRestDay, ')
+          ..write('appliesSundaySurcharge: $appliesSundaySurcharge, ')
+          ..write('appliesHolidaySurcharge: $appliesHolidaySurcharge')
           ..write(')'))
         .toString();
   }
@@ -706,6 +863,22 @@ class $PayrollConfigsTable extends PayrollConfigs
       type: DriftSqlType.int,
       requiredDuringInsert: false,
       defaultValue: const Constant(16));
+  static const VerificationMeta _paymentDay1Meta =
+      const VerificationMeta('paymentDay1');
+  @override
+  late final GeneratedColumn<int> paymentDay1 = GeneratedColumn<int>(
+      'payment_day1', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(30));
+  static const VerificationMeta _paymentDay2Meta =
+      const VerificationMeta('paymentDay2');
+  @override
+  late final GeneratedColumn<int> paymentDay2 = GeneratedColumn<int>(
+      'payment_day2', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(15));
   static const VerificationMeta _healthPercentageMeta =
       const VerificationMeta('healthPercentage');
   @override
@@ -747,6 +920,8 @@ class $PayrollConfigsTable extends PayrollConfigs
         frequency,
         cutoffDay1,
         cutoffDay2,
+        paymentDay1,
+        paymentDay2,
         healthPercentage,
         pensionPercentage,
         nightSurchargePercentage,
@@ -802,6 +977,18 @@ class $PayrollConfigsTable extends PayrollConfigs
           cutoffDay2.isAcceptableOrUnknown(
               data['cutoff_day2']!, _cutoffDay2Meta));
     }
+    if (data.containsKey('payment_day1')) {
+      context.handle(
+          _paymentDay1Meta,
+          paymentDay1.isAcceptableOrUnknown(
+              data['payment_day1']!, _paymentDay1Meta));
+    }
+    if (data.containsKey('payment_day2')) {
+      context.handle(
+          _paymentDay2Meta,
+          paymentDay2.isAcceptableOrUnknown(
+              data['payment_day2']!, _paymentDay2Meta));
+    }
     if (data.containsKey('health_percentage')) {
       context.handle(
           _healthPercentageMeta,
@@ -852,6 +1039,10 @@ class $PayrollConfigsTable extends PayrollConfigs
           .read(DriftSqlType.int, data['${effectivePrefix}cutoff_day1'])!,
       cutoffDay2: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}cutoff_day2'])!,
+      paymentDay1: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}payment_day1'])!,
+      paymentDay2: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}payment_day2'])!,
       healthPercentage: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}health_percentage'])!,
       pensionPercentage: attachedDatabase.typeMapping.read(
@@ -878,6 +1069,8 @@ class PayrollConfig extends DataClass implements Insertable<PayrollConfig> {
   final String frequency;
   final int cutoffDay1;
   final int cutoffDay2;
+  final int paymentDay1;
+  final int paymentDay2;
   final int healthPercentage;
   final int pensionPercentage;
   final int nightSurchargePercentage;
@@ -890,6 +1083,8 @@ class PayrollConfig extends DataClass implements Insertable<PayrollConfig> {
       required this.frequency,
       required this.cutoffDay1,
       required this.cutoffDay2,
+      required this.paymentDay1,
+      required this.paymentDay2,
       required this.healthPercentage,
       required this.pensionPercentage,
       required this.nightSurchargePercentage,
@@ -904,6 +1099,8 @@ class PayrollConfig extends DataClass implements Insertable<PayrollConfig> {
     map['frequency'] = Variable<String>(frequency);
     map['cutoff_day1'] = Variable<int>(cutoffDay1);
     map['cutoff_day2'] = Variable<int>(cutoffDay2);
+    map['payment_day1'] = Variable<int>(paymentDay1);
+    map['payment_day2'] = Variable<int>(paymentDay2);
     map['health_percentage'] = Variable<int>(healthPercentage);
     map['pension_percentage'] = Variable<int>(pensionPercentage);
     map['night_surcharge_percentage'] = Variable<int>(nightSurchargePercentage);
@@ -920,6 +1117,8 @@ class PayrollConfig extends DataClass implements Insertable<PayrollConfig> {
       frequency: Value(frequency),
       cutoffDay1: Value(cutoffDay1),
       cutoffDay2: Value(cutoffDay2),
+      paymentDay1: Value(paymentDay1),
+      paymentDay2: Value(paymentDay2),
       healthPercentage: Value(healthPercentage),
       pensionPercentage: Value(pensionPercentage),
       nightSurchargePercentage: Value(nightSurchargePercentage),
@@ -940,6 +1139,8 @@ class PayrollConfig extends DataClass implements Insertable<PayrollConfig> {
       frequency: serializer.fromJson<String>(json['frequency']),
       cutoffDay1: serializer.fromJson<int>(json['cutoffDay1']),
       cutoffDay2: serializer.fromJson<int>(json['cutoffDay2']),
+      paymentDay1: serializer.fromJson<int>(json['paymentDay1']),
+      paymentDay2: serializer.fromJson<int>(json['paymentDay2']),
       healthPercentage: serializer.fromJson<int>(json['healthPercentage']),
       pensionPercentage: serializer.fromJson<int>(json['pensionPercentage']),
       nightSurchargePercentage:
@@ -959,6 +1160,8 @@ class PayrollConfig extends DataClass implements Insertable<PayrollConfig> {
       'frequency': serializer.toJson<String>(frequency),
       'cutoffDay1': serializer.toJson<int>(cutoffDay1),
       'cutoffDay2': serializer.toJson<int>(cutoffDay2),
+      'paymentDay1': serializer.toJson<int>(paymentDay1),
+      'paymentDay2': serializer.toJson<int>(paymentDay2),
       'healthPercentage': serializer.toJson<int>(healthPercentage),
       'pensionPercentage': serializer.toJson<int>(pensionPercentage),
       'nightSurchargePercentage':
@@ -975,6 +1178,8 @@ class PayrollConfig extends DataClass implements Insertable<PayrollConfig> {
           String? frequency,
           int? cutoffDay1,
           int? cutoffDay2,
+          int? paymentDay1,
+          int? paymentDay2,
           int? healthPercentage,
           int? pensionPercentage,
           int? nightSurchargePercentage,
@@ -989,6 +1194,8 @@ class PayrollConfig extends DataClass implements Insertable<PayrollConfig> {
         frequency: frequency ?? this.frequency,
         cutoffDay1: cutoffDay1 ?? this.cutoffDay1,
         cutoffDay2: cutoffDay2 ?? this.cutoffDay2,
+        paymentDay1: paymentDay1 ?? this.paymentDay1,
+        paymentDay2: paymentDay2 ?? this.paymentDay2,
         healthPercentage: healthPercentage ?? this.healthPercentage,
         pensionPercentage: pensionPercentage ?? this.pensionPercentage,
         nightSurchargePercentage:
@@ -1011,6 +1218,10 @@ class PayrollConfig extends DataClass implements Insertable<PayrollConfig> {
           data.cutoffDay1.present ? data.cutoffDay1.value : this.cutoffDay1,
       cutoffDay2:
           data.cutoffDay2.present ? data.cutoffDay2.value : this.cutoffDay2,
+      paymentDay1:
+          data.paymentDay1.present ? data.paymentDay1.value : this.paymentDay1,
+      paymentDay2:
+          data.paymentDay2.present ? data.paymentDay2.value : this.paymentDay2,
       healthPercentage: data.healthPercentage.present
           ? data.healthPercentage.value
           : this.healthPercentage,
@@ -1036,6 +1247,8 @@ class PayrollConfig extends DataClass implements Insertable<PayrollConfig> {
           ..write('frequency: $frequency, ')
           ..write('cutoffDay1: $cutoffDay1, ')
           ..write('cutoffDay2: $cutoffDay2, ')
+          ..write('paymentDay1: $paymentDay1, ')
+          ..write('paymentDay2: $paymentDay2, ')
           ..write('healthPercentage: $healthPercentage, ')
           ..write('pensionPercentage: $pensionPercentage, ')
           ..write('nightSurchargePercentage: $nightSurchargePercentage, ')
@@ -1053,6 +1266,8 @@ class PayrollConfig extends DataClass implements Insertable<PayrollConfig> {
       frequency,
       cutoffDay1,
       cutoffDay2,
+      paymentDay1,
+      paymentDay2,
       healthPercentage,
       pensionPercentage,
       nightSurchargePercentage,
@@ -1068,6 +1283,8 @@ class PayrollConfig extends DataClass implements Insertable<PayrollConfig> {
           other.frequency == this.frequency &&
           other.cutoffDay1 == this.cutoffDay1 &&
           other.cutoffDay2 == this.cutoffDay2 &&
+          other.paymentDay1 == this.paymentDay1 &&
+          other.paymentDay2 == this.paymentDay2 &&
           other.healthPercentage == this.healthPercentage &&
           other.pensionPercentage == this.pensionPercentage &&
           other.nightSurchargePercentage == this.nightSurchargePercentage &&
@@ -1082,6 +1299,8 @@ class PayrollConfigsCompanion extends UpdateCompanion<PayrollConfig> {
   final Value<String> frequency;
   final Value<int> cutoffDay1;
   final Value<int> cutoffDay2;
+  final Value<int> paymentDay1;
+  final Value<int> paymentDay2;
   final Value<int> healthPercentage;
   final Value<int> pensionPercentage;
   final Value<int> nightSurchargePercentage;
@@ -1094,6 +1313,8 @@ class PayrollConfigsCompanion extends UpdateCompanion<PayrollConfig> {
     this.frequency = const Value.absent(),
     this.cutoffDay1 = const Value.absent(),
     this.cutoffDay2 = const Value.absent(),
+    this.paymentDay1 = const Value.absent(),
+    this.paymentDay2 = const Value.absent(),
     this.healthPercentage = const Value.absent(),
     this.pensionPercentage = const Value.absent(),
     this.nightSurchargePercentage = const Value.absent(),
@@ -1107,6 +1328,8 @@ class PayrollConfigsCompanion extends UpdateCompanion<PayrollConfig> {
     this.frequency = const Value.absent(),
     this.cutoffDay1 = const Value.absent(),
     this.cutoffDay2 = const Value.absent(),
+    this.paymentDay1 = const Value.absent(),
+    this.paymentDay2 = const Value.absent(),
     this.healthPercentage = const Value.absent(),
     this.pensionPercentage = const Value.absent(),
     this.nightSurchargePercentage = const Value.absent(),
@@ -1120,6 +1343,8 @@ class PayrollConfigsCompanion extends UpdateCompanion<PayrollConfig> {
     Expression<String>? frequency,
     Expression<int>? cutoffDay1,
     Expression<int>? cutoffDay2,
+    Expression<int>? paymentDay1,
+    Expression<int>? paymentDay2,
     Expression<int>? healthPercentage,
     Expression<int>? pensionPercentage,
     Expression<int>? nightSurchargePercentage,
@@ -1135,6 +1360,8 @@ class PayrollConfigsCompanion extends UpdateCompanion<PayrollConfig> {
       if (frequency != null) 'frequency': frequency,
       if (cutoffDay1 != null) 'cutoff_day1': cutoffDay1,
       if (cutoffDay2 != null) 'cutoff_day2': cutoffDay2,
+      if (paymentDay1 != null) 'payment_day1': paymentDay1,
+      if (paymentDay2 != null) 'payment_day2': paymentDay2,
       if (healthPercentage != null) 'health_percentage': healthPercentage,
       if (pensionPercentage != null) 'pension_percentage': pensionPercentage,
       if (nightSurchargePercentage != null)
@@ -1151,6 +1378,8 @@ class PayrollConfigsCompanion extends UpdateCompanion<PayrollConfig> {
       Value<String>? frequency,
       Value<int>? cutoffDay1,
       Value<int>? cutoffDay2,
+      Value<int>? paymentDay1,
+      Value<int>? paymentDay2,
       Value<int>? healthPercentage,
       Value<int>? pensionPercentage,
       Value<int>? nightSurchargePercentage,
@@ -1165,6 +1394,8 @@ class PayrollConfigsCompanion extends UpdateCompanion<PayrollConfig> {
       frequency: frequency ?? this.frequency,
       cutoffDay1: cutoffDay1 ?? this.cutoffDay1,
       cutoffDay2: cutoffDay2 ?? this.cutoffDay2,
+      paymentDay1: paymentDay1 ?? this.paymentDay1,
+      paymentDay2: paymentDay2 ?? this.paymentDay2,
       healthPercentage: healthPercentage ?? this.healthPercentage,
       pensionPercentage: pensionPercentage ?? this.pensionPercentage,
       nightSurchargePercentage:
@@ -1199,6 +1430,12 @@ class PayrollConfigsCompanion extends UpdateCompanion<PayrollConfig> {
     if (cutoffDay2.present) {
       map['cutoff_day2'] = Variable<int>(cutoffDay2.value);
     }
+    if (paymentDay1.present) {
+      map['payment_day1'] = Variable<int>(paymentDay1.value);
+    }
+    if (paymentDay2.present) {
+      map['payment_day2'] = Variable<int>(paymentDay2.value);
+    }
     if (healthPercentage.present) {
       map['health_percentage'] = Variable<int>(healthPercentage.value);
     }
@@ -1225,6 +1462,8 @@ class PayrollConfigsCompanion extends UpdateCompanion<PayrollConfig> {
           ..write('frequency: $frequency, ')
           ..write('cutoffDay1: $cutoffDay1, ')
           ..write('cutoffDay2: $cutoffDay2, ')
+          ..write('paymentDay1: $paymentDay1, ')
+          ..write('paymentDay2: $paymentDay2, ')
           ..write('healthPercentage: $healthPercentage, ')
           ..write('pensionPercentage: $pensionPercentage, ')
           ..write('nightSurchargePercentage: $nightSurchargePercentage, ')
@@ -1627,6 +1866,230 @@ class PaymentHistoryCompanion extends UpdateCompanion<PaymentHistoryData> {
   }
 }
 
+class $AppSettingsTable extends AppSettings
+    with TableInfo<$AppSettingsTable, AppSetting> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _themeModeMeta =
+      const VerificationMeta('themeMode');
+  @override
+  late final GeneratedColumn<String> themeMode = GeneratedColumn<String>(
+      'theme_mode', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('system'));
+  static const VerificationMeta _onboardingDoneMeta =
+      const VerificationMeta('onboardingDone');
+  @override
+  late final GeneratedColumn<bool> onboardingDone = GeneratedColumn<bool>(
+      'onboarding_done', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("onboarding_done" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  @override
+  List<GeneratedColumn> get $columns => [id, themeMode, onboardingDone];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_settings';
+  @override
+  VerificationContext validateIntegrity(Insertable<AppSetting> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('theme_mode')) {
+      context.handle(_themeModeMeta,
+          themeMode.isAcceptableOrUnknown(data['theme_mode']!, _themeModeMeta));
+    }
+    if (data.containsKey('onboarding_done')) {
+      context.handle(
+          _onboardingDoneMeta,
+          onboardingDone.isAcceptableOrUnknown(
+              data['onboarding_done']!, _onboardingDoneMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AppSetting map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppSetting(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      themeMode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}theme_mode'])!,
+      onboardingDone: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}onboarding_done'])!,
+    );
+  }
+
+  @override
+  $AppSettingsTable createAlias(String alias) {
+    return $AppSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class AppSetting extends DataClass implements Insertable<AppSetting> {
+  final int id;
+  final String themeMode;
+  final bool onboardingDone;
+  const AppSetting(
+      {required this.id,
+      required this.themeMode,
+      required this.onboardingDone});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['theme_mode'] = Variable<String>(themeMode);
+    map['onboarding_done'] = Variable<bool>(onboardingDone);
+    return map;
+  }
+
+  AppSettingsCompanion toCompanion(bool nullToAbsent) {
+    return AppSettingsCompanion(
+      id: Value(id),
+      themeMode: Value(themeMode),
+      onboardingDone: Value(onboardingDone),
+    );
+  }
+
+  factory AppSetting.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppSetting(
+      id: serializer.fromJson<int>(json['id']),
+      themeMode: serializer.fromJson<String>(json['themeMode']),
+      onboardingDone: serializer.fromJson<bool>(json['onboardingDone']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'themeMode': serializer.toJson<String>(themeMode),
+      'onboardingDone': serializer.toJson<bool>(onboardingDone),
+    };
+  }
+
+  AppSetting copyWith({int? id, String? themeMode, bool? onboardingDone}) =>
+      AppSetting(
+        id: id ?? this.id,
+        themeMode: themeMode ?? this.themeMode,
+        onboardingDone: onboardingDone ?? this.onboardingDone,
+      );
+  AppSetting copyWithCompanion(AppSettingsCompanion data) {
+    return AppSetting(
+      id: data.id.present ? data.id.value : this.id,
+      themeMode: data.themeMode.present ? data.themeMode.value : this.themeMode,
+      onboardingDone: data.onboardingDone.present
+          ? data.onboardingDone.value
+          : this.onboardingDone,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSetting(')
+          ..write('id: $id, ')
+          ..write('themeMode: $themeMode, ')
+          ..write('onboardingDone: $onboardingDone')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, themeMode, onboardingDone);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppSetting &&
+          other.id == this.id &&
+          other.themeMode == this.themeMode &&
+          other.onboardingDone == this.onboardingDone);
+}
+
+class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
+  final Value<int> id;
+  final Value<String> themeMode;
+  final Value<bool> onboardingDone;
+  const AppSettingsCompanion({
+    this.id = const Value.absent(),
+    this.themeMode = const Value.absent(),
+    this.onboardingDone = const Value.absent(),
+  });
+  AppSettingsCompanion.insert({
+    this.id = const Value.absent(),
+    this.themeMode = const Value.absent(),
+    this.onboardingDone = const Value.absent(),
+  });
+  static Insertable<AppSetting> custom({
+    Expression<int>? id,
+    Expression<String>? themeMode,
+    Expression<bool>? onboardingDone,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (themeMode != null) 'theme_mode': themeMode,
+      if (onboardingDone != null) 'onboarding_done': onboardingDone,
+    });
+  }
+
+  AppSettingsCompanion copyWith(
+      {Value<int>? id, Value<String>? themeMode, Value<bool>? onboardingDone}) {
+    return AppSettingsCompanion(
+      id: id ?? this.id,
+      themeMode: themeMode ?? this.themeMode,
+      onboardingDone: onboardingDone ?? this.onboardingDone,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (themeMode.present) {
+      map['theme_mode'] = Variable<String>(themeMode.value);
+    }
+    if (onboardingDone.present) {
+      map['onboarding_done'] = Variable<bool>(onboardingDone.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSettingsCompanion(')
+          ..write('id: $id, ')
+          ..write('themeMode: $themeMode, ')
+          ..write('onboardingDone: $onboardingDone')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1634,12 +2097,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DayEntriesTable dayEntries = $DayEntriesTable(this);
   late final $PayrollConfigsTable payrollConfigs = $PayrollConfigsTable(this);
   late final $PaymentHistoryTable paymentHistory = $PaymentHistoryTable(this);
+  late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [shifts, dayEntries, payrollConfigs, paymentHistory];
+      [shifts, dayEntries, payrollConfigs, paymentHistory, appSettings];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
         [
@@ -1662,6 +2126,9 @@ typedef $$ShiftsTableCreateCompanionBuilder = ShiftsCompanion Function({
   required String endTime,
   required String colorHex,
   Value<bool> isNightShift,
+  Value<bool> isRestDay,
+  Value<bool> appliesSundaySurcharge,
+  Value<bool> appliesHolidaySurcharge,
 });
 typedef $$ShiftsTableUpdateCompanionBuilder = ShiftsCompanion Function({
   Value<int> id,
@@ -1671,6 +2138,9 @@ typedef $$ShiftsTableUpdateCompanionBuilder = ShiftsCompanion Function({
   Value<String> endTime,
   Value<String> colorHex,
   Value<bool> isNightShift,
+  Value<bool> isRestDay,
+  Value<bool> appliesSundaySurcharge,
+  Value<bool> appliesHolidaySurcharge,
 });
 
 final class $$ShiftsTableReferences
@@ -1721,6 +2191,17 @@ class $$ShiftsTableFilterComposer
 
   ColumnFilters<bool> get isNightShift => $composableBuilder(
       column: $table.isNightShift, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isRestDay => $composableBuilder(
+      column: $table.isRestDay, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get appliesSundaySurcharge => $composableBuilder(
+      column: $table.appliesSundaySurcharge,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get appliesHolidaySurcharge => $composableBuilder(
+      column: $table.appliesHolidaySurcharge,
+      builder: (column) => ColumnFilters(column));
 
   Expression<bool> dayEntriesRefs(
       Expression<bool> Function($$DayEntriesTableFilterComposer f) f) {
@@ -1775,6 +2256,17 @@ class $$ShiftsTableOrderingComposer
   ColumnOrderings<bool> get isNightShift => $composableBuilder(
       column: $table.isNightShift,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isRestDay => $composableBuilder(
+      column: $table.isRestDay, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get appliesSundaySurcharge => $composableBuilder(
+      column: $table.appliesSundaySurcharge,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get appliesHolidaySurcharge => $composableBuilder(
+      column: $table.appliesHolidaySurcharge,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$ShiftsTableAnnotationComposer
@@ -1806,6 +2298,15 @@ class $$ShiftsTableAnnotationComposer
 
   GeneratedColumn<bool> get isNightShift => $composableBuilder(
       column: $table.isNightShift, builder: (column) => column);
+
+  GeneratedColumn<bool> get isRestDay =>
+      $composableBuilder(column: $table.isRestDay, builder: (column) => column);
+
+  GeneratedColumn<bool> get appliesSundaySurcharge => $composableBuilder(
+      column: $table.appliesSundaySurcharge, builder: (column) => column);
+
+  GeneratedColumn<bool> get appliesHolidaySurcharge => $composableBuilder(
+      column: $table.appliesHolidaySurcharge, builder: (column) => column);
 
   Expression<T> dayEntriesRefs<T extends Object>(
       Expression<T> Function($$DayEntriesTableAnnotationComposer a) f) {
@@ -1859,6 +2360,9 @@ class $$ShiftsTableTableManager extends RootTableManager<
             Value<String> endTime = const Value.absent(),
             Value<String> colorHex = const Value.absent(),
             Value<bool> isNightShift = const Value.absent(),
+            Value<bool> isRestDay = const Value.absent(),
+            Value<bool> appliesSundaySurcharge = const Value.absent(),
+            Value<bool> appliesHolidaySurcharge = const Value.absent(),
           }) =>
               ShiftsCompanion(
             id: id,
@@ -1868,6 +2372,9 @@ class $$ShiftsTableTableManager extends RootTableManager<
             endTime: endTime,
             colorHex: colorHex,
             isNightShift: isNightShift,
+            isRestDay: isRestDay,
+            appliesSundaySurcharge: appliesSundaySurcharge,
+            appliesHolidaySurcharge: appliesHolidaySurcharge,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -1877,6 +2384,9 @@ class $$ShiftsTableTableManager extends RootTableManager<
             required String endTime,
             required String colorHex,
             Value<bool> isNightShift = const Value.absent(),
+            Value<bool> isRestDay = const Value.absent(),
+            Value<bool> appliesSundaySurcharge = const Value.absent(),
+            Value<bool> appliesHolidaySurcharge = const Value.absent(),
           }) =>
               ShiftsCompanion.insert(
             id: id,
@@ -1886,6 +2396,9 @@ class $$ShiftsTableTableManager extends RootTableManager<
             endTime: endTime,
             colorHex: colorHex,
             isNightShift: isNightShift,
+            isRestDay: isRestDay,
+            appliesSundaySurcharge: appliesSundaySurcharge,
+            appliesHolidaySurcharge: appliesHolidaySurcharge,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
@@ -2191,6 +2704,8 @@ typedef $$PayrollConfigsTableCreateCompanionBuilder = PayrollConfigsCompanion
   Value<String> frequency,
   Value<int> cutoffDay1,
   Value<int> cutoffDay2,
+  Value<int> paymentDay1,
+  Value<int> paymentDay2,
   Value<int> healthPercentage,
   Value<int> pensionPercentage,
   Value<int> nightSurchargePercentage,
@@ -2205,6 +2720,8 @@ typedef $$PayrollConfigsTableUpdateCompanionBuilder = PayrollConfigsCompanion
   Value<String> frequency,
   Value<int> cutoffDay1,
   Value<int> cutoffDay2,
+  Value<int> paymentDay1,
+  Value<int> paymentDay2,
   Value<int> healthPercentage,
   Value<int> pensionPercentage,
   Value<int> nightSurchargePercentage,
@@ -2242,6 +2759,12 @@ class $$PayrollConfigsTableFilterComposer
 
   ColumnFilters<int> get cutoffDay2 => $composableBuilder(
       column: $table.cutoffDay2, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get paymentDay1 => $composableBuilder(
+      column: $table.paymentDay1, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get paymentDay2 => $composableBuilder(
+      column: $table.paymentDay2, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get healthPercentage => $composableBuilder(
       column: $table.healthPercentage,
@@ -2292,6 +2815,12 @@ class $$PayrollConfigsTableOrderingComposer
   ColumnOrderings<int> get cutoffDay2 => $composableBuilder(
       column: $table.cutoffDay2, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get paymentDay1 => $composableBuilder(
+      column: $table.paymentDay1, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get paymentDay2 => $composableBuilder(
+      column: $table.paymentDay2, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get healthPercentage => $composableBuilder(
       column: $table.healthPercentage,
       builder: (column) => ColumnOrderings(column));
@@ -2338,6 +2867,12 @@ class $$PayrollConfigsTableAnnotationComposer
 
   GeneratedColumn<int> get cutoffDay2 => $composableBuilder(
       column: $table.cutoffDay2, builder: (column) => column);
+
+  GeneratedColumn<int> get paymentDay1 => $composableBuilder(
+      column: $table.paymentDay1, builder: (column) => column);
+
+  GeneratedColumn<int> get paymentDay2 => $composableBuilder(
+      column: $table.paymentDay2, builder: (column) => column);
 
   GeneratedColumn<int> get healthPercentage => $composableBuilder(
       column: $table.healthPercentage, builder: (column) => column);
@@ -2386,6 +2921,8 @@ class $$PayrollConfigsTableTableManager extends RootTableManager<
             Value<String> frequency = const Value.absent(),
             Value<int> cutoffDay1 = const Value.absent(),
             Value<int> cutoffDay2 = const Value.absent(),
+            Value<int> paymentDay1 = const Value.absent(),
+            Value<int> paymentDay2 = const Value.absent(),
             Value<int> healthPercentage = const Value.absent(),
             Value<int> pensionPercentage = const Value.absent(),
             Value<int> nightSurchargePercentage = const Value.absent(),
@@ -2399,6 +2936,8 @@ class $$PayrollConfigsTableTableManager extends RootTableManager<
             frequency: frequency,
             cutoffDay1: cutoffDay1,
             cutoffDay2: cutoffDay2,
+            paymentDay1: paymentDay1,
+            paymentDay2: paymentDay2,
             healthPercentage: healthPercentage,
             pensionPercentage: pensionPercentage,
             nightSurchargePercentage: nightSurchargePercentage,
@@ -2412,6 +2951,8 @@ class $$PayrollConfigsTableTableManager extends RootTableManager<
             Value<String> frequency = const Value.absent(),
             Value<int> cutoffDay1 = const Value.absent(),
             Value<int> cutoffDay2 = const Value.absent(),
+            Value<int> paymentDay1 = const Value.absent(),
+            Value<int> paymentDay2 = const Value.absent(),
             Value<int> healthPercentage = const Value.absent(),
             Value<int> pensionPercentage = const Value.absent(),
             Value<int> nightSurchargePercentage = const Value.absent(),
@@ -2425,6 +2966,8 @@ class $$PayrollConfigsTableTableManager extends RootTableManager<
             frequency: frequency,
             cutoffDay1: cutoffDay1,
             cutoffDay2: cutoffDay2,
+            paymentDay1: paymentDay1,
+            paymentDay2: paymentDay2,
             healthPercentage: healthPercentage,
             pensionPercentage: pensionPercentage,
             nightSurchargePercentage: nightSurchargePercentage,
@@ -2663,6 +3206,143 @@ typedef $$PaymentHistoryTableProcessedTableManager = ProcessedTableManager<
     ),
     PaymentHistoryData,
     PrefetchHooks Function()>;
+typedef $$AppSettingsTableCreateCompanionBuilder = AppSettingsCompanion
+    Function({
+  Value<int> id,
+  Value<String> themeMode,
+  Value<bool> onboardingDone,
+});
+typedef $$AppSettingsTableUpdateCompanionBuilder = AppSettingsCompanion
+    Function({
+  Value<int> id,
+  Value<String> themeMode,
+  Value<bool> onboardingDone,
+});
+
+class $$AppSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get themeMode => $composableBuilder(
+      column: $table.themeMode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get onboardingDone => $composableBuilder(
+      column: $table.onboardingDone,
+      builder: (column) => ColumnFilters(column));
+}
+
+class $$AppSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get themeMode => $composableBuilder(
+      column: $table.themeMode, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get onboardingDone => $composableBuilder(
+      column: $table.onboardingDone,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$AppSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get themeMode =>
+      $composableBuilder(column: $table.themeMode, builder: (column) => column);
+
+  GeneratedColumn<bool> get onboardingDone => $composableBuilder(
+      column: $table.onboardingDone, builder: (column) => column);
+}
+
+class $$AppSettingsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $AppSettingsTable,
+    AppSetting,
+    $$AppSettingsTableFilterComposer,
+    $$AppSettingsTableOrderingComposer,
+    $$AppSettingsTableAnnotationComposer,
+    $$AppSettingsTableCreateCompanionBuilder,
+    $$AppSettingsTableUpdateCompanionBuilder,
+    (AppSetting, BaseReferences<_$AppDatabase, $AppSettingsTable, AppSetting>),
+    AppSetting,
+    PrefetchHooks Function()> {
+  $$AppSettingsTableTableManager(_$AppDatabase db, $AppSettingsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AppSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AppSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AppSettingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> themeMode = const Value.absent(),
+            Value<bool> onboardingDone = const Value.absent(),
+          }) =>
+              AppSettingsCompanion(
+            id: id,
+            themeMode: themeMode,
+            onboardingDone: onboardingDone,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> themeMode = const Value.absent(),
+            Value<bool> onboardingDone = const Value.absent(),
+          }) =>
+              AppSettingsCompanion.insert(
+            id: id,
+            themeMode: themeMode,
+            onboardingDone: onboardingDone,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$AppSettingsTable, AppSetting>(table),
+                    BaseReferences<_$AppDatabase, $AppSettingsTable,
+                        AppSetting>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$AppSettingsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $AppSettingsTable,
+    AppSetting,
+    $$AppSettingsTableFilterComposer,
+    $$AppSettingsTableOrderingComposer,
+    $$AppSettingsTableAnnotationComposer,
+    $$AppSettingsTableCreateCompanionBuilder,
+    $$AppSettingsTableUpdateCompanionBuilder,
+    (AppSetting, BaseReferences<_$AppDatabase, $AppSettingsTable, AppSetting>),
+    AppSetting,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2675,4 +3355,6 @@ class $AppDatabaseManager {
       $$PayrollConfigsTableTableManager(_db, _db.payrollConfigs);
   $$PaymentHistoryTableTableManager get paymentHistory =>
       $$PaymentHistoryTableTableManager(_db, _db.paymentHistory);
+  $$AppSettingsTableTableManager get appSettings =>
+      $$AppSettingsTableTableManager(_db, _db.appSettings);
 }

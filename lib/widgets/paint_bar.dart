@@ -28,12 +28,12 @@ class PaintBar extends ConsumerWidget {
               const Icon(Icons.brush_rounded,
                   color: AppColors.primary, size: 18),
               const SizedBox(width: 6),
-              const Text(
+              Text(
                 'Modo pintura',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
-                  color: AppColors.textPrimary,
+                  color: AppPalette.of(context).textPrimary,
                 ),
               ),
               const Spacer(),
@@ -115,7 +115,9 @@ class _ShiftPill extends StatelessWidget {
             Text(
               shift.abbreviation,
               style: TextStyle(
-                color: selected ? Colors.white : AppColors.textPrimary,
+                color: selected
+                    ? Colors.white
+                    : AppPalette.of(context).textPrimary,
                 fontWeight: FontWeight.w800,
                 fontSize: 14,
               ),
@@ -149,7 +151,7 @@ class _EraserButton extends StatelessWidget {
         ),
         child: Icon(
           Icons.auto_fix_off_rounded,
-          color: active ? Colors.white : AppColors.textSecondary,
+          color: active ? Colors.white : AppPalette.of(context).textSecondary,
           size: 20,
         ),
       ),

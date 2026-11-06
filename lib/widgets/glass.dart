@@ -4,20 +4,23 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
+const double kBottomNavHeight = 86;
+
 class BackgroundGradient extends StatelessWidget {
   const BackgroundGradient({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const DecoratedBox(
+    final palette = AppPalette.of(context);
+    return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.backgroundTop, AppColors.backgroundBottom],
+          colors: [palette.backgroundTop, palette.backgroundBottom],
         ),
       ),
-      child: SizedBox.expand(),
+      child: const SizedBox.expand(),
     );
   }
 }
@@ -28,7 +31,7 @@ class GlassContainer extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry margin;
   final double blur;
-  final Color color;
+  final Color? color;
   final Border? border;
   final List<BoxShadow>? shadow;
 
@@ -39,13 +42,14 @@ class GlassContainer extends StatelessWidget {
     this.padding = const EdgeInsets.all(16),
     this.margin = EdgeInsets.zero,
     this.blur = 18,
-    this.color = AppColors.glassFill,
+    this.color,
     this.border,
     this.shadow,
   });
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return Container(
       margin: margin,
       decoration: BoxDecoration(
@@ -53,7 +57,7 @@ class GlassContainer extends StatelessWidget {
         boxShadow: shadow ??
             [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 24,
                 offset: const Offset(0, 10),
               ),
@@ -66,7 +70,7 @@ class GlassContainer extends StatelessWidget {
           child: Container(
             padding: padding,
             decoration: BoxDecoration(
-              color: color,
+              color: color ?? palette.glassFill,
               borderRadius: BorderRadius.circular(borderRadius),
               border: border ??
                   Border.all(color: Colors.white.withValues(alpha: 0.6)),
@@ -89,7 +93,7 @@ class GlassIconButton extends StatelessWidget {
     super.key,
     required this.icon,
     required this.onTap,
-    this.color = AppColors.textPrimary,
+    this.color = AppColors.primary,
     this.size = 44,
   });
 
@@ -169,7 +173,8 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.primary : AppColors.textSecondary;
+    final palette = AppPalette.of(context);
+    final color = selected ? AppColors.primary : palette.textSecondary;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,

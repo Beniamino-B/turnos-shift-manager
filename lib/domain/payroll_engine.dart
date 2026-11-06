@@ -122,6 +122,39 @@ DateTime _addMonths(DateTime date, int months) {
   return (start, DateTime(now.year, now.month, first));
 }
 
+List<DateTime> nextPaymentDates(PayrollConfig config, DateTime now) {
+  final (periodStart, periodEnd) = currentPeriod(config, now);
+  final paymentDays = config.frequency == 'BIWEEKLY'
+      ? [config.paymentDay2, config.paymentDay1]
+      : [config.paymentDay1];
+
+  final dates = <DateTime>[];
+  for (final day in paymentDays) {
+    var candidate = DateTime(periodEnd.year, periodEnd.month,
+        _clampDay(day, periodEnd.year, periodEnd.month));
+    if (candidate.isBefore(now) || candidate.isBefore(periodStart)) {
+      candidate = _addMonths(candidate, 1);
+    }
+    dates.add(candidate);
+  }
+  dates.sort();
+  return dates;
+}
+
+bool isHoliday(DateTime date) {
+  final month = date.month;
+  final day = date.day;
+  const fixed = {
+    (1, 1),
+    (5, 1),
+    (7, 20),
+    (8, 7),
+    (12, 8),
+    (12, 25),
+  };
+  return fixed.contains((month, day));
+}
+
 PayrollSummary computePayroll({
   required List<Shift> shifts,
   required List<DayEntry> entries,
@@ -132,6 +165,10 @@ PayrollSummary computePayroll({
   required int extraDeductions,
 }) {
   final shiftsById = {for (final shift in shifts) shift.id: shift};
+  final entriesByDay = {
+    for (final entry in entries)
+      DateTime(entry.date.year, entry.date.month, entry.date.day): entry,
+  };
   final countedUntil = DateTime(now.year, now.month, now.day);
 
   var daysWorked = 0;
@@ -140,21 +177,26 @@ PayrollSummary computePayroll({
   var nightMinutes = 0;
   var extraDayMinutes = 0;
 
-  for (final entry in entries) {
-    final date = DateTime(entry.date.year, entry.date.month, entry.date.day);
-    if (date.isBefore(periodStart) || date.isAfter(countedUntil)) continue;
+  var day = DateTime(periodStart.year, periodStart.month, periodStart.day);
+  while (!day.isAfter(countedUntil)) {
+    final entry = entriesByDay[day];
+    final shift = entry == null ? null : shiftsById[entry.shiftId];
 
-    final shift = entry.shiftId == null ? null : shiftsById[entry.shiftId];
-    if (shift == null) {
+    if (shift == null || shift.isRestDay) {
       restDays++;
-      continue;
+    } else {
+      daysWorked++;
+      final minutes = shiftDurationMinutes(shift.startTime, shift.endTime);
+      totalMinutes += minutes;
+      if (shift.isNightShift) nightMinutes += minutes;
+      if (shift.appliesSundaySurcharge && day.weekday == DateTime.sunday) {
+        extraDayMinutes += minutes;
+      }
+      if (shift.appliesHolidaySurcharge && isHoliday(day)) {
+        extraDayMinutes += minutes;
+      }
     }
-
-    daysWorked++;
-    final minutes = shiftDurationMinutes(shift.startTime, shift.endTime);
-    totalMinutes += minutes;
-    if (shift.isNightShift) nightMinutes += minutes;
-    if (entry.date.weekday == DateTime.sunday) extraDayMinutes += minutes;
+    day = day.add(const Duration(days: 1));
   }
 
   final standardHours = _standardHours(config.frequency);
@@ -225,11 +267,16 @@ int computeMonthGross({
     final date = DateTime(entry.date.year, entry.date.month, entry.date.day);
     if (date.isBefore(monthStart) || !date.isBefore(monthEnd)) continue;
     final shift = entry.shiftId == null ? null : shiftsById[entry.shiftId];
-    if (shift == null) continue;
+    if (shift == null || shift.isRestDay) continue;
     final duration = shiftDurationMinutes(shift.startTime, shift.endTime);
     minutes += duration;
     if (shift.isNightShift) nightMinutes += duration;
-    if (entry.date.weekday == DateTime.sunday) extraMinutes += duration;
+    if (shift.appliesSundaySurcharge && entry.date.weekday == DateTime.sunday) {
+      extraMinutes += duration;
+    }
+    if (shift.appliesHolidaySurcharge && isHoliday(date)) {
+      extraMinutes += duration;
+    }
   }
 
   final basePay = _roundDiv(minutes * hourlyRate, 60);
