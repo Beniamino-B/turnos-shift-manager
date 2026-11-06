@@ -198,7 +198,7 @@ class _ShiftEditorSheetState extends ConsumerState<_ShiftEditorSheet> {
       child: GlassContainer(
         borderRadius: 30,
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-        color: Colors.white.withValues(alpha: 0.96),
+        color: palette.surface,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -227,14 +227,14 @@ class _ShiftEditorSheetState extends ConsumerState<_ShiftEditorSheet> {
               Row(
                 children: [
                   Expanded(
+                    flex: 2,
                     child: TextField(
                       controller: _nameController,
                       decoration: const InputDecoration(labelText: 'Nombre'),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    width: 90,
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: TextField(
                       controller: _abbrController,
                       decoration: const InputDecoration(labelText: 'Abrev.'),

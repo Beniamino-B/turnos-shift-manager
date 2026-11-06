@@ -549,7 +549,7 @@ class _RegisterPaymentSheetState
       child: GlassContainer(
         borderRadius: 30,
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-        color: Colors.white.withValues(alpha: 0.95),
+        color: palette.surface,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

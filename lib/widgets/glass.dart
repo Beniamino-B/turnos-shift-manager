@@ -127,10 +127,13 @@ class GlassBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
     return GlassContainer(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       borderRadius: 28,
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      blur: 12,
+      color: palette.surface.withValues(alpha: 0.9),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [

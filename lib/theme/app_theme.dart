@@ -13,6 +13,7 @@ class AppColors {
 class AppPalette extends ThemeExtension<AppPalette> {
   final Color backgroundTop;
   final Color backgroundBottom;
+  final Color surface;
   final Color textPrimary;
   final Color textSecondary;
   final Color glassFill;
@@ -21,6 +22,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
   const AppPalette({
     required this.backgroundTop,
     required this.backgroundBottom,
+    required this.surface,
     required this.textPrimary,
     required this.textSecondary,
     required this.glassFill,
@@ -30,6 +32,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
   static const light = AppPalette(
     backgroundTop: Color(0xFFEEF1FF),
     backgroundBottom: Color(0xFFD2D8FC),
+    surface: Color(0xFFFDFDFF),
     textPrimary: Color(0xFF1D1E3A),
     textSecondary: Color(0xFF6B6E93),
     glassFill: Color(0xB3FFFFFF),
@@ -39,6 +42,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
   static const dark = AppPalette(
     backgroundTop: Color(0xFF14162B),
     backgroundBottom: Color(0xFF22254A),
+    surface: Color(0xFF1B1D36),
     textPrimary: Color(0xFFF2F3FF),
     textSecondary: Color(0xFFB4B8D4),
     glassFill: Color(0x2EFFFFFF),
@@ -52,6 +56,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
   AppPalette copyWith({
     Color? backgroundTop,
     Color? backgroundBottom,
+    Color? surface,
     Color? textPrimary,
     Color? textSecondary,
     Color? glassFill,
@@ -60,6 +65,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     return AppPalette(
       backgroundTop: backgroundTop ?? this.backgroundTop,
       backgroundBottom: backgroundBottom ?? this.backgroundBottom,
+      surface: surface ?? this.surface,
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
       glassFill: glassFill ?? this.glassFill,
@@ -73,6 +79,7 @@ class AppPalette extends ThemeExtension<AppPalette> {
     return AppPalette(
       backgroundTop: Color.lerp(backgroundTop, other.backgroundTop, t)!,
       backgroundBottom: Color.lerp(backgroundBottom, other.backgroundBottom, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
       glassFill: Color.lerp(glassFill, other.glassFill, t)!,
@@ -103,6 +110,12 @@ ThemeData _buildTheme(Brightness brightness) {
   final textTheme = GoogleFonts.poppinsTextTheme(base.textTheme).apply(
     bodyColor: palette.textPrimary,
     displayColor: palette.textPrimary,
+    decoration: TextDecoration.none,
+  );
+
+  final outline = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(14),
+    borderSide: BorderSide.none,
   );
 
   return base.copyWith(
@@ -114,21 +127,27 @@ ThemeData _buildTheme(Brightness brightness) {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white.withValues(alpha: isDark ? 0.08 : 0.6),
+      fillColor: isDark
+          ? Colors.white.withValues(alpha: 0.08)
+          : Colors.white.withValues(alpha: 0.7),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: palette.glassBorder),
-      ),
+      border: outline,
+      enabledBorder: outline,
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
       ),
+      disabledBorder: outline,
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.danger),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.6),
+      ),
       labelStyle: TextStyle(color: palette.textSecondary),
+      hintStyle: TextStyle(color: palette.textSecondary.withValues(alpha: 0.7)),
     ),
     dividerTheme: DividerThemeData(color: palette.glassBorder),
   );

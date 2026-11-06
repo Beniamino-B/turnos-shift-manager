@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 
 import '../data/database.dart';
 import '../domain/formatters.dart';
@@ -12,7 +10,8 @@ import '../theme/app_theme.dart';
 import '../widgets/glass.dart';
 import '../widgets/paint_bar.dart';
 
-const double _horizontalPadding = 12;
+const double _horizontalPadding = 14;
+const double _bottomPadding = kBottomNavHeight + 80;
 const double _paintBarBottom = 100;
 
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -23,70 +22,28 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
-  final ScrollController _scrollController = ScrollController();
-  final Map<int, GlobalKey> _monthKeys = {};
-  final Map<int, double> _monthBlur = {};
+  late final PageController _pageController;
+  late final List<(int, int)> _months;
+  late int _currentPage;
   DateTime? _lastPaintedDay;
-  Timer? _hideTimer;
-  double _lastOffset = 0;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
+    final today = DateTime.now();
+    final startYear = today.year - 2;
+    _months = [
+      for (var y = startYear; y <= startYear + 4; y++)
+        for (var m = 1; m <= 12; m++) (y, m),
+    ];
+    _currentPage = (today.year - startYear) * 12 + (today.month - 1);
+    _pageController = PageController(initialPage: _currentPage);
   }
 
   @override
   void dispose() {
-    _hideTimer?.cancel();
-    _scrollController.dispose();
+    _pageController.dispose();
     super.dispose();
-  }
-
-  void _onScroll() {
-    final offset = _scrollController.offset;
-    final delta = offset - _lastOffset;
-    _lastOffset = offset;
-
-    if (delta > 1) {
-      ref.read(summaryVisibleProvider.notifier).state = false;
-    } else if (delta < -1) {
-      ref.read(summaryVisibleProvider.notifier).state = true;
-    }
-
-    _hideTimer?.cancel();
-    _hideTimer = Timer(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        ref.read(summaryVisibleProvider.notifier).state = true;
-      }
-    });
-
-    _updateBlur();
-  }
-
-  void _updateBlur() {
-    if (!mounted) return;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final center = screenHeight / 2;
-    var changed = false;
-
-    _monthKeys.forEach((index, key) {
-      final ctx = key.currentContext;
-      if (ctx == null) return;
-      final box = ctx.findRenderObject();
-      if (box is! RenderBox || !box.attached) return;
-      final top = box.localToGlobal(Offset.zero).dy;
-      final gridCenter = top + box.size.height / 2;
-      final distance = (gridCenter - center).abs();
-      final blur = (distance / screenHeight).clamp(0.0, 1.0) * 4.0;
-      final prev = _monthBlur[index];
-      if (prev == null || (prev - blur).abs() > 0.15) {
-        _monthBlur[index] = blur;
-        changed = true;
-      }
-    });
-
-    if (changed) setState(() {});
   }
 
   @override
@@ -103,8 +60,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     };
 
     final today = DateTime.now();
-    final months = _monthWindow(today, 6, 12);
     final bottomInset = MediaQuery.of(context).padding.bottom;
+    final (year, month) = _months[_currentPage];
 
     return Stack(
       children: [
@@ -117,26 +74,43 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 child: _topBar(palette),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                formatMonthYear(DateTime(year, month, 1)),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: palette.textPrimary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
             Expanded(
-              child: CustomScrollView(
-                controller: _scrollController,
-                physics: paintMode
-                    ? const NeverScrollableScrollPhysics()
-                    : const BouncingScrollPhysics(),
-                slivers: [
-                  for (var i = 0; i < months.length; i++)
-                    _buildMonth(
-                      months[i].$1,
-                      months[i].$2,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: _bottomPadding),
+                child: PageView.builder(
+                  controller: _pageController,
+                  scrollDirection: Axis.vertical,
+                  physics: paintMode
+                      ? const NeverScrollableScrollPhysics()
+                      : const BouncingScrollPhysics(),
+                  onPageChanged: (index) =>
+                      setState(() => _currentPage = index),
+                  itemCount: _months.length,
+                  itemBuilder: (context, index) {
+                    return _monthPage(
+                      _months[index].$1,
+                      _months[index].$2,
                       entriesByDay,
                       shiftsById,
                       paintMode,
                       today,
-                      i,
                       palette,
-                    ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 170)),
-                ],
+                    );
+                  },
+                ),
               ),
             ),
           ],
@@ -204,86 +178,96 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     ref.read(paintModeProvider.notifier).state = true;
   }
 
-  Widget _buildMonth(
+  Widget _monthPage(
     int year,
     int month,
     Map<DateTime, DayEntry> entriesByDay,
     Map<int, Shift> shiftsById,
     bool paintMode,
     DateTime today,
-    int index,
     AppPalette palette,
   ) {
     final cells = _monthCells(year, month);
-    final key = _monthKeys.putIfAbsent(index, () => GlobalKey());
-    final blur = _monthBlur[index] ?? 0.0;
-
-    return SliverStickyHeader(
-      header: _monthHeader(year, month, palette),
-      sliver: SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final cellWidth = constraints.maxWidth / 7;
-              final cellHeight = cellWidth / 0.9;
-              final rows = (cells.length / 7).ceil();
-              final gridHeight = rows * cellHeight;
-              return SizedBox(
-                key: key,
-                height: gridHeight,
-                child: ImageFiltered(
-                  imageFilter:
-                      ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-                  child: Listener(
-                    behavior: HitTestBehavior.opaque,
-                    onPointerDown: paintMode
-                        ? (event) => _handlePaint(
-                              event.localPosition,
-                              cellWidth,
-                              cellHeight,
-                              cells,
-                            )
-                        : null,
-                    onPointerMove: paintMode
-                        ? (event) => _handlePaint(
-                              event.localPosition,
-                              cellWidth,
-                              cellHeight,
-                              cells,
-                            )
-                        : null,
-                    onPointerUp:
-                        paintMode ? (_) => _lastPaintedDay = null : null,
-                    child: GridView.builder(
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.zero,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 7,
-                        childAspectRatio: 0.9,
-                        crossAxisSpacing: 0,
-                        mainAxisSpacing: 0,
-                      ),
-                      itemCount: cells.length,
-                      itemBuilder: (context, cellIndex) {
-                        final date = cells[cellIndex];
-                        if (date == null) {
-                          return const SizedBox.shrink();
-                        }
-                        final entry = entriesByDay[date];
-                        final shift = entry == null
-                            ? null
-                            : shiftsById[entry.shiftId];
-                        return _dayCell(date, shift, today, palette);
-                      },
+    return Column(
+      children: [
+        _weekdayRow(palette),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final rows = cells.length ~/ 7;
+                final cellWidth = constraints.maxWidth / 7;
+                final cellHeight = constraints.maxHeight / rows;
+                return Listener(
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: paintMode
+                      ? (event) => _handlePaint(
+                            event.localPosition,
+                            cellWidth,
+                            cellHeight,
+                            cells,
+                          )
+                      : null,
+                  onPointerMove: paintMode
+                      ? (event) => _handlePaint(
+                            event.localPosition,
+                            cellWidth,
+                            cellHeight,
+                            cells,
+                          )
+                      : null,
+                  onPointerUp:
+                      paintMode ? (_) => _lastPaintedDay = null : null,
+                  child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 7,
+                      childAspectRatio: cellWidth / cellHeight,
+                      crossAxisSpacing: 0,
+                      mainAxisSpacing: 0,
                     ),
+                    itemCount: cells.length,
+                    itemBuilder: (context, index) {
+                      final date = cells[index];
+                      if (date == null) {
+                        return const SizedBox.shrink();
+                      }
+                      final entry = entriesByDay[date];
+                      final shift =
+                          entry == null ? null : shiftsById[entry.shiftId];
+                      return _dayCell(date, shift, today, palette);
+                    },
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _weekdayRow(AppPalette palette) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _horizontalPadding),
+      child: Row(
+        children: [
+          for (var i = 0; i < 7; i++)
+            Expanded(
+              child: Center(
+                child: Text(
+                  spanishWeekdayInitials[i],
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: palette.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -311,50 +295,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     unawaited(ref.read(paintDayProvider)(date, shiftId));
   }
 
-  Widget _monthHeader(int year, int month, AppPalette palette) {
-    return GlassContainer(
-      borderRadius: 0,
-      padding: const EdgeInsets.symmetric(
-          horizontal: _horizontalPadding, vertical: 8),
-      color: Colors.white.withValues(alpha: 0.88),
-      blur: 22,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              formatMonthYear(DateTime(year, month, 1)),
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: palette.textPrimary,
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              for (var i = 0; i < 7; i++)
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      spanishWeekdayInitials[i],
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: palette.textSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _dayCell(DateTime date, Shift? shift, DateTime today, AppPalette palette) {
     final isToday = date.year == today.year &&
         date.month == today.month &&
@@ -362,12 +302,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final shiftColor = shift == null ? null : colorFromHex(shift.colorHex);
 
     return Container(
-      margin: const EdgeInsets.all(2),
+      margin: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: shiftColor == null
             ? Colors.transparent
-            : shiftColor.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
+            : shiftColor.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(14),
         border: isToday
             ? Border.all(color: AppColors.primary, width: 2)
             : null,
@@ -376,8 +316,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 26,
-            height: 26,
+            width: 32,
+            height: 32,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: isToday ? AppColors.primary : Colors.transparent,
@@ -386,24 +326,24 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             child: Text(
               '${date.day}',
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: isToday ? FontWeight.w800 : FontWeight.w500,
+                fontSize: 15,
+                fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
                 color: isToday ? Colors.white : palette.textPrimary,
               ),
             ),
           ),
           if (shift != null) ...[
-            const SizedBox(height: 3),
+            const SizedBox(height: 4),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: shiftColor,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 shift.abbreviation,
                 style: const TextStyle(
-                  fontSize: 9,
+                  fontSize: 10,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
                 ),
@@ -431,15 +371,4 @@ List<DateTime?> _monthCells(int year, int month) {
     cells.add(null);
   }
   return cells;
-}
-
-List<(int, int)> _monthWindow(DateTime today, int before, int after) {
-  final result = <(int, int)>[];
-  for (var offset = -before; offset <= after; offset++) {
-    final monthIndex = today.month - 1 + offset;
-    final year = today.year + monthIndex ~/ 12;
-    final month = monthIndex % 12 + 1;
-    result.add((year, month));
-  }
-  return result;
 }

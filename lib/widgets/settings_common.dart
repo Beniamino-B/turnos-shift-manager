@@ -12,41 +12,49 @@ class SettingsScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = AppPalette.of(context);
-    return Column(
-      children: [
-        SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: GlassContainer(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              borderRadius: 26,
-              child: Row(
-                children: [
-                  GlassIconButton(
-                    icon: Icons.arrow_back_rounded,
-                    onTap: () => Navigator.of(context).pop(),
-                    color: palette.textPrimary,
-                    size: 40,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: palette.textPrimary,
-                      ),
+    return Scaffold(
+      body: Stack(
+        children: [
+          const BackgroundGradient(),
+          Column(
+            children: [
+              SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: GlassContainer(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 8),
+                    borderRadius: 26,
+                    child: Row(
+                      children: [
+                        GlassIconButton(
+                          icon: Icons.arrow_back_rounded,
+                          onTap: () => Navigator.of(context).pop(),
+                          color: palette.textPrimary,
+                          size: 40,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: palette.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+              Expanded(child: child),
+            ],
           ),
-        ),
-        Expanded(child: child),
-      ],
+        ],
+      ),
     );
   }
 }
